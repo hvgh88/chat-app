@@ -1,7 +1,9 @@
 package com.umass.hangout.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import javax.persistence.*;
+import java.util.HashSet;
 import java.util.Set;
 
 @Entity
@@ -12,11 +14,9 @@ public class User {
     private Long id;
     private String username;
 
-    @ManyToMany
-    @JoinTable(
-            name = "user_groups",
-            joinColumns = @JoinColumn(name = "user_id"),
-            inverseJoinColumns = @JoinColumn(name = "group_id")
-    )
-    private Set<Group> groups;
+    @JsonIgnore
+    @ElementCollection
+    @CollectionTable(name = "user_groups", joinColumns = @JoinColumn(name = "user_id"))
+    @Column(name = "group_id")
+    private Set<Long> groupIds = new HashSet<>();
 }

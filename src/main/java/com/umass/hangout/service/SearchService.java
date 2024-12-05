@@ -2,8 +2,8 @@ package com.umass.hangout.service;
 
 import com.umass.hangout.entity.Group;
 import com.umass.hangout.entity.Message;
-import com.umass.hangout.repository.GroupSearchRepository;
-import com.umass.hangout.repository.MessageSearchRepository;
+import com.umass.hangout.repository.elasticsearch.GroupSearchRepository;
+import com.umass.hangout.repository.elasticsearch.MessageSearchRepository;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.elasticsearch.core.ElasticsearchOperations;

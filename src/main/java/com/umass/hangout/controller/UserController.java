@@ -5,6 +5,7 @@ import com.umass.hangout.entity.Group;
 import com.umass.hangout.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.*;
+import java.util.List;
 import java.util.Set;
 
 @RestController
@@ -19,7 +20,12 @@ public class UserController {
     }
 
     @GetMapping("/groups/{userId}")
-    public Set<Group> getUserGroups(@PathVariable Long userId) {
+    public List<Group> getUserGroups(@PathVariable Long userId) {
         return userService.getUserGroups(userId);
+    }
+
+    @GetMapping("/group-ids/{userId}")
+    public Set<Long> getUserGroupIds(@PathVariable Long userId) {
+        return userService.getUserGroupIds(userId);
     }
 }

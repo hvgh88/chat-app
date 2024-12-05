@@ -2,12 +2,12 @@ package com.umass.hangout.controller;
 
 import com.umass.hangout.entity.Group;
 import com.umass.hangout.entity.Message;
+import com.umass.hangout.entity.MessageDTO;
 import com.umass.hangout.service.GroupService;
-import com.umass.hangout.service.SearchService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,7 +19,7 @@ public class GroupController {
     private GroupService groupService;
 
     @Autowired
-    private SearchService searchService;
+    private SimpMessagingTemplate messagingTemplate;
 
     @GetMapping("/messages/{groupId}")
     public List<Message> getGroupMessages(@PathVariable Long groupId) {
@@ -41,19 +41,20 @@ public class GroupController {
         return groupService.getAllGroups();
     }
 
-    @GetMapping("/search")
-    public List<Group> searchGroups(@RequestParam String keyword) {
-        return searchService.searchGroups(keyword);
-    }
-
-    @GetMapping("/{groupId}/messages/search")
-    public List<Message> searchMessagesInGroup(@PathVariable Long groupId, @RequestParam String keyword) {
-        return searchService.searchMessagesInGroup(groupId, keyword);
+    @GetMapping("/user/{userId}")
+    public List<Group> getUserGroups(@PathVariable Long userId) {
+        return groupService.getUserGroups(userId);
     }
 
     @MessageMapping("/chat/{groupId}")
-    @SendTo("/topic/messages/{groupId}")
-    public Message sendMessage(@DestinationVariable Long groupId, Message message) {
-        return groupService.sendMessage(groupId, message.getSender().getId(), message.getContent());
+    public void handleMessage(@DestinationVariable Long groupId, Message message) {
+        Message savedMessage = groupService.sendMessage(groupId, message.getSender().getId(), message.getContent());
+        MessageDTO messageDTO = new MessageDTO(
+                savedMessage.getId(),
+                savedMessage.getContent(),
+                savedMessage.getSender().getId(),
+                savedMessage.getGroup().getId()
+        );
+        messagingTemplate.convertAndSend("/topic/messages/" + groupId, messageDTO);
     }
 }
