@@ -16,13 +16,13 @@ public class Message {
     private Long id;
     private String content;
 
-    @JsonBackReference
-    @ManyToOne
+    @JsonIgnore // Prevent serialization issues
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     private User sender;
 
-    @JsonBackReference
-    @ManyToOne
+    @JsonIgnore // Prevent serialization issues
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "group_id")
     private Group group;
 

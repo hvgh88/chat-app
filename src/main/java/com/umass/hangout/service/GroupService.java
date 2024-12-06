@@ -60,21 +60,25 @@ public class GroupService {
 
     @Transactional
     public MessageDTO sendMessage(Long groupId, MessageDTO messageDTO) {
-        log.info("Entering sendMessage method. GroupId: {}, MessageDTO: {}", groupId, messageDTO);
+        log.debug("Entering sendMessage method. GroupId: {}, MessageDTO: {}", groupId, messageDTO);
+
         User sender = userRepository.findById(messageDTO.getSenderId())
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + messageDTO.getSenderId()));
+
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new GroupNotFoundException("Group not found"));
+                .orElseThrow(() -> new GroupNotFoundException("Group not found with ID: " + groupId));
 
         Message message = new Message();
         message.setContent(messageDTO.getContent());
         message.setSender(sender);
         message.setGroup(group);
-        log.info("Message Object created: {}", message);
+
+        log.debug("Created new message: {}", message);
+
         Message savedMessage = messageRepository.save(message);
-        log.info("Message Object saved: {}", savedMessage);
-        messageSearchRepository.save(savedMessage);
-        log.info("Message Object saved in ES: {}", savedMessage);
+
+        log.debug("Saved message: {}", savedMessage);
+
         return new MessageDTO(
                 savedMessage.getId(),
                 savedMessage.getContent(),

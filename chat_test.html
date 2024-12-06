@@ -69,7 +69,7 @@
   function displayMessage(message) {
       console.log('Displaying message:', message);
       const messagesDiv = document.getElementById('messages');
-      messagesDiv.innerHTML += `<p><strong>${message.senderUsername}:</strong> ${message.content}</p>`;
+      messagesDiv.innerHTML += `<p><strong>${message.username}:</strong> ${message.content}</p>`;
   }
 
   function sendMessage() {
