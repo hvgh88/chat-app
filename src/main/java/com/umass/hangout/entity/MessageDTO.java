@@ -13,4 +13,5 @@ public class MessageDTO {
     private String content;
     private Long senderId;
     private Long groupId;
+    private String senderUsername;
 }

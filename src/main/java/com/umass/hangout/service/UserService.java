@@ -2,6 +2,7 @@ package com.umass.hangout.service;
 
 import com.umass.hangout.entity.User;
 import com.umass.hangout.entity.Group;
+import com.umass.hangout.exception.UserNotFoundException;
 import com.umass.hangout.repository.jpa.UserRepository;
 import com.umass.hangout.repository.jpa.GroupRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,12 +25,17 @@ public class UserService {
 
     public Set<Long> getUserGroupIds(Long userId) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
         return user.getGroupIds();
     }
 
     public List<Group> getUserGroups(Long userId) {
         Set<Long> groupIds = getUserGroupIds(userId);
         return groupRepository.findAllById(groupIds);
+    }
+
+    public User getUserById(Long userId) {
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
     }
 }

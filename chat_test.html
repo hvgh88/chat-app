@@ -2,47 +2,88 @@
 <html>
 <head>
   <title>Chat App Test</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script> <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/sockjs-client/1.5.0/sockjs.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
 </head>
 <body>
 <h1>Chat App Test</h1>
-<div> <label for="userId">User ID:</label> <input type="number" id="userId" value="1"> <label for="groupId">Group ID:</label> <input type="number" id="groupId" value="1"> <button onclick="connect()">Connect</button> </div>
+<div>
+  <label for="userId">User ID:</label>
+  <input type="number" id="userId" value="1">
+  <label for="groupId">Group ID:</label>
+  <input type="number" id="groupId" value="1">
+  <button onclick="connect()">Connect</button>
+</div>
 <div id="chatBox" style="display:none;">
   <h2>Chat</h2>
   <div id="messages"></div>
-  <input type="text" id="messageInput" placeholder="Enter message"> <button onclick="sendMessage()">Send</button>
+  <input type="text" id="messageInput" placeholder="Enter message">
+  <button onclick="sendMessage()">Send</button>
 </div>
+
 <script>
   let stompClient = null;
+  let currentUser = null;
 
-  function connect() {
+  async function connect() {
       const userId = document.getElementById('userId').value;
       const groupId = document.getElementById('groupId').value;
-      const socket = new SockJS('http://localhost:8080/ws');
-      stompClient = Stomp.over(socket);
-      stompClient.connect({}, function(frame) {
-          console.log('Connected: ' + frame);
-          document.getElementById('chatBox').style.display = 'block';
-          stompClient.subscribe('/topic/messages/' + groupId, function(message) {
-              const messageBody = JSON.parse(message.body);
-              console.log('Received message:', messageBody);
-              document.getElementById('messages').innerHTML += '<p><strong>User ' + messageBody.senderId + ':</strong> ' + messageBody.content + '</p>';
+      console.log('Connecting with userId:', userId, 'groupId:', groupId);
+
+      try {
+          // Fetch user details
+          const response = await fetch(`http://localhost:8080/user/${userId}`);
+          if (!response.ok) {
+              throw new Error('Failed to fetch user details');
+          }
+          currentUser = await response.json();
+          console.log('Current user:', currentUser);
+
+          const socket = new SockJS('http://localhost:8080/ws');
+          stompClient = Stomp.over(socket);
+
+          stompClient.connect({}, function(frame) {
+              console.log('Connected: ' + frame);
+              document.getElementById('chatBox').style.display = 'block';
+
+              console.log('Fetching messages for group:', groupId);
+              fetch(`http://localhost:8080/group/${groupId}/messages`)
+                  .then(response => response.json())
+                  .then(messages => {
+                      console.log('Received messages:', messages);
+                      messages.forEach(displayMessage);
+                  })
+                  .catch(error => console.error('Error fetching messages:', error));
+
+              stompClient.subscribe('/topic/messages/' + groupId, function(message) {
+                  console.log('Received new message:', message.body);
+                  const messageBody = JSON.parse(message.body);
+                  displayMessage(messageBody);
+              });
           });
-      });
+      } catch (error) {
+          console.error('Error during connection:', error);
+      }
+  }
+
+  function displayMessage(message) {
+      console.log('Displaying message:', message);
+      const messagesDiv = document.getElementById('messages');
+      messagesDiv.innerHTML += `<p><strong>${message.senderUsername}:</strong> ${message.content}</p>`;
   }
 
   function sendMessage() {
-      const userId = document.getElementById('userId').value;
-      const groupId = document.getElementById('groupId').value;
+      if (!currentUser) {
+          console.error('User not connected');
+          return;
+      }
       const content = document.getElementById('messageInput').value;
+      const groupId = document.getElementById('groupId').value;
       stompClient.send("/app/chat/" + groupId, {}, JSON.stringify({
           'content': content,
-          'sender': {
-              'id': parseInt(userId)
-          },
-          'group': {
-              'id': parseInt(groupId)
-          }
+          'senderId': currentUser.id,
+          'groupId': parseInt(groupId),
+          'senderUsername': currentUser.username
       }));
       document.getElementById('messageInput').value = '';
   }

@@ -9,5 +9,5 @@ import java.util.List;
 
 @Repository("messageRepository")
 public interface MessageRepository extends JpaRepository<Message, Long> {
-    List<Message> findByGroupOrderByTimestampAsc(Group group);
+    List<Message> findByGroupIdOrderByIdAsc(Long groupId);
 }
