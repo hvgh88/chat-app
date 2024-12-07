@@ -1,6 +1,7 @@
 package com.umass.hangout.service;
 
 import com.umass.hangout.entity.Group;
+import com.umass.hangout.exception.GroupNotFoundException;
 import com.umass.hangout.repository.jpa.GroupRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,7 +16,7 @@ public class ICSService {
 
     public byte[] generateICS(Long groupId) throws IOException {
         Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new RuntimeException("Group not found"));
+                .orElseThrow(() -> new GroupNotFoundException("Group not found with ID: " + groupId));
 
         String icsContent = String.format(
                 "BEGIN:VCALENDAR\n" +

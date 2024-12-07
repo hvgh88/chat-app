@@ -4,6 +4,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.ResponseStatus;
 
 @ControllerAdvice
 public class GlobalExceptionHandler {
@@ -26,5 +27,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(UserNotInGroupException.class)
     public ResponseEntity<String> handleUserNotInGroup(UserNotInGroupException ex) {
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UserAlreadyInGroupException.class)
+    @ResponseStatus(HttpStatus.CONFLICT) // Returns 409 instead of 500
+    public ResponseEntity<String> handleUserAlreadyInGroupException(UserAlreadyInGroupException ex) {
+        return new ResponseEntity<>(ex.getMessage(), HttpStatus.CONFLICT);
+    }
+
+    @ExceptionHandler(InvalidGroupIdFormatException.class)
+    public ResponseEntity<String> handleInvalidGroupIdFormat(InvalidGroupIdFormatException e) {
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(e.getMessage());
     }
 }

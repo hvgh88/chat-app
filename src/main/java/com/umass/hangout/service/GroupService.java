@@ -6,6 +6,7 @@ import com.umass.hangout.entity.Message;
 import com.umass.hangout.entity.MessageDTO;
 import com.umass.hangout.entity.User;
 import com.umass.hangout.exception.GroupNotFoundException;
+import com.umass.hangout.exception.UserAlreadyInGroupException;
 import com.umass.hangout.exception.UserNotFoundException;
 import com.umass.hangout.exception.UserNotInGroupException;
 import com.umass.hangout.repository.elasticsearch.GroupSearchRepository;
@@ -95,11 +96,10 @@ public class GroupService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
-        if (user.getGroupIds().add(groupId)) {
-            userRepository.save(user);
-        } else {
-            throw new RuntimeException("User is already part of this group");
+        if (!user.getGroupIds().add(groupId)) {
+            throw new UserAlreadyInGroupException("User " + userId + " is already a member of group " + groupId);
         }
+        userRepository.save(user);
     }
 
     public List<Group> getUserGroups(Long userId) {
