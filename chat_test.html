@@ -47,13 +47,7 @@
               document.getElementById('chatBox').style.display = 'block';
 
               console.log('Fetching messages for group:', groupId);
-              fetch(`http://localhost:8080/group/${groupId}/messages`)
-                  .then(response => response.json())
-                  .then(messages => {
-                      console.log('Received messages:', messages);
-                      messages.forEach(displayMessage);
-                  })
-                  .catch(error => console.error('Error fetching messages:', error));
+              fetchMessagesFromElasticsearch(groupId);
 
               stompClient.subscribe('/topic/messages/' + groupId, function(message) {
                   console.log('Received new message:', message.body);
@@ -66,11 +60,36 @@
       }
   }
 
-  function displayMessage(message) {
-      console.log('Displaying message:', message);
-      const messagesDiv = document.getElementById('messages');
-      messagesDiv.innerHTML += `<p><strong>${message.username}:</strong> ${message.content}</p>`;
+  async function fetchMessagesFromElasticsearch(groupId) {
+      try {
+          const response = await fetch('http://localhost:9200/messages/_search', {
+              method: 'POST',
+              headers: {
+                  'Content-Type': 'application/json',
+                  'Origin': 'http://localhost:8000'
+              },
+              body: JSON.stringify({
+                  query: {
+                      match: {
+                          "group.id": groupId
+                      }
+                  }
+              })
+          });
+          const data = await response.json();
+          console.log('Received messages:', data);
+          data.hits.hits.forEach(hit => displayMessage(hit._source));
+      } catch (error) {
+          console.error('Error fetching messages from Elasticsearch:', error);
+      }
   }
+
+  function displayMessage(message) {
+    console.log('Displaying message:', message);
+    const messagesDiv = document.getElementById('messages');
+    const username = message.sender ? message.sender.username : message.senderUsername;
+    messagesDiv.innerHTML += `<p><strong>${username}:</strong> ${message.content}</p>`;
+}
 
   function sendMessage() {
       if (!currentUser) {
