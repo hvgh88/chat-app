@@ -76,7 +76,7 @@ public class GroupService {
         log.debug("Created new message: {}", message);
 
         Message savedMessage = messageRepository.save(message);
-
+        messageSearchRepository.save(savedMessage);
         log.debug("Saved message: {}", savedMessage);
 
         return new MessageDTO(

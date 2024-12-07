@@ -3,7 +3,7 @@ package com.umass.hangout.entity;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 import org.springframework.data.elasticsearch.annotations.Document;
-
+import org.springframework.data.annotation.Transient;
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.HashSet;
@@ -24,6 +24,7 @@ public class Group {
 
     private LocalDateTime dateTime;
 
+    @Transient
     @OneToMany(mappedBy = "group", cascade = CascadeType.ALL)
     @JsonIgnore
     private Set<Message> messages;
