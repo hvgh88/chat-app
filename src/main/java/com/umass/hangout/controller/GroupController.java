@@ -3,8 +3,13 @@ package com.umass.hangout.controller;
 import com.umass.hangout.entity.Group;
 import com.umass.hangout.entity.Message;
 import com.umass.hangout.entity.MessageDTO;
+import com.umass.hangout.exception.GroupNotFoundException;
+import com.umass.hangout.exception.InvalidInputException;
+import com.umass.hangout.exception.UserAlreadyInGroupException;
+import com.umass.hangout.exception.UserNotFoundException;
 import com.umass.hangout.service.GroupService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.handler.annotation.DestinationVariable;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -34,9 +39,20 @@ public class GroupController {
     }
 
     @PostMapping("/join")
-    public ResponseEntity<Void> joinGroup(@RequestParam Long groupId, @RequestParam Long userId) {
-        groupService.joinGroup(groupId, userId);
-        return ResponseEntity.ok().build();
+    public ResponseEntity<String> joinGroup(@RequestParam String groupId, @RequestParam String userId) {
+        try {
+            Long groupIdLong = Long.parseLong(groupId);
+            Long userIdLong = Long.parseLong(userId);
+            groupService.joinGroup(groupIdLong, userIdLong);
+            return ResponseEntity.ok().build();
+        } catch (NumberFormatException e) {
+            String errorMessage = groupId.matches("\\d+") ?
+                    "Invalid user ID format: " + userId :
+                    "Invalid group ID format: " + groupId;
+            throw new InvalidInputException(errorMessage);
+        } catch (GroupNotFoundException | UserNotFoundException | UserAlreadyInGroupException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+        }
     }
 
     @GetMapping("/all")
