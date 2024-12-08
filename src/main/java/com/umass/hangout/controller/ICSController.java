@@ -5,13 +5,11 @@ import com.umass.hangout.exception.InvalidGroupIdFormatException;
 import com.umass.hangout.service.ICSService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.*;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api")
+@CrossOrigin(origins = "*", allowedHeaders = "*")
 public class ICSController {
     @Autowired
     private ICSService icsService;

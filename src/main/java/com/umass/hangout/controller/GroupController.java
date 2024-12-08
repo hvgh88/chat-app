@@ -3,10 +3,7 @@ package com.umass.hangout.controller;
 import com.umass.hangout.entity.Group;
 import com.umass.hangout.entity.Message;
 import com.umass.hangout.entity.MessageDTO;
-import com.umass.hangout.exception.GroupNotFoundException;
-import com.umass.hangout.exception.InvalidInputException;
-import com.umass.hangout.exception.UserAlreadyInGroupException;
-import com.umass.hangout.exception.UserNotFoundException;
+import com.umass.hangout.exception.*;
 import com.umass.hangout.service.GroupService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -18,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.validation.Valid;
 import java.util.List;
 
 @CrossOrigin(origins = "*", allowedHeaders = "*")
@@ -34,8 +32,23 @@ public class GroupController {
     private static final Logger log = LoggerFactory.getLogger(GroupController.class);
 
     @PostMapping("/create")
-    public Group createGroup(@RequestBody Group group, @RequestParam Long userId) {
-        return groupService.createGroup(group, userId);
+    public ResponseEntity<String> createGroup(@Valid @RequestBody Group group, @RequestParam String userId) {
+        try {
+            Long userIdLong = Long.parseLong(userId);
+            Group createdGroup = groupService.createGroup(group, userIdLong);
+            return ResponseEntity.ok().body("Group created successfully with ID: " + createdGroup.getId());
+        } catch (NumberFormatException e) {
+            throw new InvalidInputException("Invalid user ID format: " + userId);
+        } catch (UserNotFoundException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body(e.getMessage());
+        } catch (InvalidDateTimeFormatException | InvalidGroupDataException e) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body(e.getMessage());
+        } catch (Exception e) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body("Error creating group: " + e.getMessage());
+        }
     }
 
     @PostMapping("/join")
