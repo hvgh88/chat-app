@@ -5,9 +5,7 @@ import com.umass.hangout.entity.Group;
 import com.umass.hangout.entity.Message;
 import com.umass.hangout.entity.MessageDTO;
 import com.umass.hangout.entity.User;
-import com.umass.hangout.exception.GroupNotFoundException;
-import com.umass.hangout.exception.UserNotFoundException;
-import com.umass.hangout.exception.UserNotInGroupException;
+import com.umass.hangout.exception.*;
 import com.umass.hangout.repository.elasticsearch.GroupSearchRepository;
 import com.umass.hangout.repository.elasticsearch.MessageSearchRepository;
 import com.umass.hangout.repository.jpa.GroupRepository;
@@ -20,6 +18,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.transaction.Transactional;
+import java.time.DateTimeException;
+import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
@@ -42,8 +42,12 @@ public class GroupService {
 
     @Transactional
     public Group createGroup(Group group, Long userId) {
+        // Validate user
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
+
+        // Validate group data
+        validateGroupData(group);
 
         Group savedGroup = groupRepository.save(group);
         groupSearchRepository.save(savedGroup);
@@ -52,6 +56,35 @@ public class GroupService {
         userRepository.save(user);
 
         return savedGroup;
+    }
+
+    private void validateGroupData(Group group) {
+        if (group == null) {
+            throw new InvalidGroupDataException("Group data cannot be null");
+        }
+
+        if (group.getName() == null || group.getName().trim().isEmpty()) {
+            throw new InvalidGroupDataException("Group name cannot be empty");
+        }
+
+        if (group.getLocation() == null || group.getLocation().trim().isEmpty()) {
+            throw new InvalidGroupDataException("Group location cannot be empty");
+        }
+
+        if (group.getDateTime() == null) {
+            throw new InvalidGroupDataException("Group date/time cannot be null");
+        }
+
+        try {
+            LocalDateTime dateTime = group.getDateTime();
+            LocalDateTime now = LocalDateTime.now();
+
+            if (dateTime.isBefore(now)) {
+                throw new InvalidDateTimeFormatException("Group date/time must be in the future");
+            }
+        } catch (DateTimeException e) {
+            throw new InvalidDateTimeFormatException("Invalid date-time format: " + e.getMessage());
+        }
     }
 
     public List<Group> getAllGroups() {
@@ -95,11 +128,10 @@ public class GroupService {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new UserNotFoundException("User not found with ID: " + userId));
 
-        if (user.getGroupIds().add(groupId)) {
-            userRepository.save(user);
-        } else {
-            throw new RuntimeException("User is already part of this group");
+        if (!user.getGroupIds().add(groupId)) {
+            throw new UserAlreadyInGroupException("User " + userId + " is already a member of group " + groupId);
         }
+        userRepository.save(user);
     }
 
     public List<Group> getUserGroups(Long userId) {
